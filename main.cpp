@@ -34,8 +34,6 @@ int main() {
         inputFile >> rect.x >> rect.y >> rect.dx >> rect.dy >> rect.color.r >> rect.color.g >> rect.color.b;
         rectangles[i] = rect;
     }
-    assert(rectangles[0].color.g == 128);
-    assert(false);
 
     // Find the size of final picture
     int length = 0, width = 0;
@@ -52,7 +50,9 @@ int main() {
     }
 
     // Create and fill the picture
-
+    Pixel image[length][width];
+    assert(image[0][0].r == 255);
+    assert(0);
 
     // Closing the program
     inputFile.close();
