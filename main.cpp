@@ -8,7 +8,7 @@ using namespace std;
 struct Pixel {
     int r, g, b;
 
-    Pixel() {
+    Pixel() { // New images will be filled with white color because of this constructor
         r = 255;
         g = 255;
         b = 255;
@@ -51,8 +51,15 @@ int main() {
 
     // Create and fill the picture
     Pixel image[length][width];
-    assert(image[0][0].r == 255);
-    assert(0);
+    
+    // Output data
+    outputFile << length << " " << width << endl;
+    for (int il = 0; il < length; ++il) {
+        for (int iw = 0; iw < width; ++iw) {
+            Pixel pixel = image[il][iw];
+            outputFile << pixel.r << " " << pixel.g << " " << pixel.b << endl;
+        }
+    }
 
     // Closing the program
     inputFile.close();
