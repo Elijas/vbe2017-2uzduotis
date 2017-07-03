@@ -5,8 +5,19 @@
 
 using namespace std;
 
+struct Pixel {
+    int r, g, b;
+
+    Pixel() {
+        r = 255;
+        g = 255;
+        b = 255;
+    }
+};
+
 struct Rect {
-    int x, y, dx, dy, r, g, b;
+    int x, y, dx, dy;
+    Pixel color;
 };
 
 int main() {
@@ -20,9 +31,11 @@ int main() {
     Rect rectangles[rectCount];
     for (int i = 0; i < rectCount; ++i) {
         Rect rect;
-        inputFile >> rect.x >> rect.y >> rect.dx >> rect.dy >> rect.r >> rect.g >> rect.b;
+        inputFile >> rect.x >> rect.y >> rect.dx >> rect.dy >> rect.color.r >> rect.color.g >> rect.color.b;
         rectangles[i] = rect;
     }
+    assert(rectangles[0].color.g == 128);
+    assert(false);
 
     // Find the size of final picture
     int length = 0, width = 0;
@@ -37,8 +50,9 @@ int main() {
         if (ydy > length)
             length = ydy;
     }
-    assert(length == 2);
-    assert(width == 3);
+
+    // Create and fill the picture
+
 
     // Closing the program
     inputFile.close();
