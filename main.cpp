@@ -20,6 +20,14 @@ struct Rect {
     Pixel color;
 };
 
+void addRectToImage(Pixel **image, Rect rect) {
+    for (int ix = rect.x; ix < rect.x + rect.dx; ++ix) {
+        for (int iy = rect.y; iy < rect.y + rect.dy; ++iy) {
+            image[ix][iy] = rect.color;
+        }
+    }
+}
+
 int main() {
     // Opening files and reading metadata
     ifstream inputFile("U2.txt");
@@ -49,14 +57,24 @@ int main() {
             length = ydy;
     }
 
-    // Create and fill the picture
-    Pixel image[length][width];
-    
+    // Create the picture
+    Pixel **image;
+    image = new Pixel *[width];
+    for (int i = 0; i < width; ++i) {
+        image[i] = new Pixel[length];
+    }
+
+    // Color the picture
+    for (int i = 0; i < rectCount; ++i) {
+        Rect rect = rectangles[i];
+        addRectToImage(image, rect);
+    }
+
     // Output data
     outputFile << length << " " << width << endl;
     for (int il = 0; il < length; ++il) {
         for (int iw = 0; iw < width; ++iw) {
-            Pixel pixel = image[il][iw];
+            Pixel pixel = image[iw][il];
             outputFile << pixel.r << " " << pixel.g << " " << pixel.b << endl;
         }
     }
