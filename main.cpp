@@ -2,6 +2,7 @@
 #include <sstream>
 #include <fstream>
 #include <cassert>
+#include <vector>
 
 using namespace std;
 
@@ -20,10 +21,10 @@ struct Rect {
     Pixel color;
 };
 
-void addRectToImage(Pixel **image, Rect rect) {
+void addRectToImage(vector<vector<Pixel>> &image, Rect rect) {
     for (int ix = rect.x; ix < rect.x + rect.dx; ++ix) {
         for (int iy = rect.y; iy < rect.y + rect.dy; ++iy) {
-            image[ix][iy] = rect.color;
+            image.at(iy).at(ix) = rect.color;
         }
     }
 }
@@ -44,24 +45,27 @@ int main() {
     }
 
     // Find the size of final picture
-    int length = 0, width = 0;
+    int ySize = 0, xSize = 0;
     for (int i = 0; i < rectCount; ++i) {
         Rect rect = rectangles[i];
 
         int xdx = rect.x + rect.dx; // x of lower left corner of rectangle
-        if (xdx > width)
-            width = xdx;
+        if (xdx > xSize)
+            xSize = xdx;
 
         int ydy = rect.y + rect.dy; // y of lower left corner of rectangle
-        if (ydy > length)
-            length = ydy;
+        if (ydy > ySize)
+            ySize = ydy;
     }
 
     // Create the picture
-    Pixel **image;
-    image = new Pixel *[width];
-    for (int i = 0; i < width; ++i) {
-        image[i] = new Pixel[length];
+    vector<vector<Pixel>> image;
+    for (int ix = 0; ix < ySize; ++ix) {
+        vector<Pixel> row;
+        for (int iy = 0; iy < xSize; ++iy) {
+            row.push_back(Pixel());
+        }
+        image.push_back(row);
     }
 
     // Color the picture
@@ -71,10 +75,10 @@ int main() {
     }
 
     // Output data
-    outputFile << length << " " << width << endl;
-    for (int il = 0; il < length; ++il) {
-        for (int iw = 0; iw < width; ++iw) {
-            Pixel pixel = image[iw][il];
+    outputFile << ySize << " " << xSize << endl;
+    for (int iiy = 0; iiy < ySize; ++iiy) {
+        for (int iix = 0; iix < xSize; ++iix) {
+            Pixel pixel = image.at(iiy).at(iix);
             outputFile << pixel.r << " " << pixel.g << " " << pixel.b << endl;
         }
     }
