@@ -1,7 +1,5 @@
 #include <iostream>
-#include <sstream>
 #include <fstream>
-#include <cassert>
 
 using namespace std;
 
@@ -13,17 +11,31 @@ struct Pixel {
         g = 255;
         b = 255;
     }
+
+    Pixel(int r, int g, int b) {
+        this->r = r;
+        this->g = g;
+        this->b = b;
+    }
 };
 
-struct Rect {
-    int x, y, dx, dy;
+struct Vector {
+    int x, y;
+
+    Vector operator+(const Vector b) { // Improves readability
+        return Vector {x = this->x + b.x, y = this->y + b.y};
+    }
+};
+
+struct Rectangle {
+    Vector start, size;
     Pixel color;
 };
 
-void addRectToImage(Pixel **image, Rect rect) {
-    for (int ix = rect.x; ix < rect.x + rect.dx; ++ix) {
-        for (int iy = rect.y; iy < rect.y + rect.dy; ++iy) {
-            image[ix][iy] = rect.color;
+void addRectToImage(Pixel **image, Rectangle rect) {
+    for (int ix = rect.size.x; ix < rect.start.x + rect.size.x; ++ix) {
+        for (int iy = rect.size.y; iy < rect.start.y + rect.size.y; ++iy) {
+            image[ix][iy] = {4,4,4};
         }
     }
 }
@@ -36,45 +48,54 @@ int main() {
     inputFile >> rectCount;
 
     // Reading data
-    Rect rectangles[rectCount];
+    Rectangle rectangles[rectCount];
     for (int i = 0; i < rectCount; ++i) {
-        Rect rect;
-        inputFile >> rect.x >> rect.y >> rect.dx >> rect.dy >> rect.color.r >> rect.color.g >> rect.color.b;
+        Rectangle rect;
+        inputFile >> rect.start.x >> rect.start.y
+                  >> rect.size.x >> rect.size.y
+                  >> rect.color.r >> rect.color.g >> rect.color.b;
         rectangles[i] = rect;
     }
 
     // Find the size of final picture
-    int length = 0, width = 0;
-    for (int i = 0; i < rectCount; ++i) {
-        Rect rect = rectangles[i];
-
-        int xdx = rect.x + rect.dx; // x of lower left corner of rectangle
-        if (xdx > width)
-            width = xdx;
-
-        int ydy = rect.y + rect.dy; // y of lower left corner of rectangle
-        if (ydy > length)
-            length = ydy;
+    Vector imageSize = {0, 0};
+    for (int i = 0; i < rectCount; ++i) { // Greedy search for the greatest needed image size
+        Rectangle rect = rectangles[i];
+        Vector neededImageSize = rect.start + rect.size; // Size of needed image size to fit this one rectangle
+        if (neededImageSize.x > imageSize.x) imageSize.x = neededImageSize.x;
+        if (neededImageSize.y > imageSize.y) imageSize.y = neededImageSize.y;
     }
 
     // Create the picture
     Pixel **image;
-    image = new Pixel *[width];
-    for (int i = 0; i < width; ++i) {
-        image[i] = new Pixel[length];
+    image = new Pixel *[imageSize.x];
+    for (int i = 0; i < imageSize.x; ++i) {
+        image[i] = new Pixel[imageSize.y];
     }
 
     // Color the picture
     for (int i = 0; i < rectCount; ++i) {
-        Rect rect = rectangles[i];
-        addRectToImage(image, rect);
+        Rectangle rect = rectangles[i];
+        for (int ix = rect.size.x; ix < rect.start.x + rect.size.x; ++ix) {
+            for (int iy = rect.size.y; iy < rect.start.y + rect.size.y; ++iy) {
+                image[ix][iy] = {4,4,4};
+            }
+        }
+
+        for (int iy = 0; iy < imageSize.y; ++iy) {
+            for (int ix = 0; ix < imageSize.x; ++ix) {
+                Pixel pixel = image[ix][iy];
+                cout << pixel.r << " " << pixel.g << " " << pixel.b << endl;
+            }
+        }
+        cout << endl;
     }
 
     // Output data
-    outputFile << length << " " << width << endl;
-    for (int il = 0; il < length; ++il) {
-        for (int iw = 0; iw < width; ++iw) {
-            Pixel pixel = image[iw][il];
+    outputFile << imageSize.y << " " << imageSize.x << endl;
+    for (int iy = 0; iy < imageSize.y; ++iy) {
+        for (int ix = 0; ix < imageSize.x; ++ix) {
+            Pixel pixel = image[ix][iy];
             outputFile << pixel.r << " " << pixel.g << " " << pixel.b << endl;
         }
     }
