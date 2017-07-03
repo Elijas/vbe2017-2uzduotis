@@ -23,11 +23,22 @@ int main() {
         inputFile >> rect.x >> rect.y >> rect.dx >> rect.dy >> rect.r >> rect.g >> rect.b;
         rectangles[i] = rect;
     }
-    assert(rectangles[0].dx == 2);
 
     // Find the size of final picture
-    int length, width;
+    int length = 0, width = 0;
+    for (int i = 0; i < rectCount; ++i) {
+        Rect rect = rectangles[i];
 
+        int xdx = rect.x + rect.dx; // x of lower left corner of rectangle
+        if (xdx > width)
+            width = xdx;
+
+        int ydy = rect.y + rect.dy; // y of lower left corner of rectangle
+        if (ydy > length)
+            length = ydy;
+    }
+    assert(length == 2);
+    assert(width == 3);
 
     // Closing the program
     inputFile.close();
