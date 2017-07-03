@@ -1,6 +1,9 @@
+// Only one file is allowed in the exam so it is not split
+
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <cassert>
 
 using namespace std;
 
@@ -14,6 +17,7 @@ struct Pixel {
     }  // New images will be filled with white color because of this constructor
 };
 
+
 struct Vector {
     int x, y;
 };
@@ -24,28 +28,92 @@ struct Rectangle {
     Pixel color;
 };
 
-void addRectToImage(vector<vector<Pixel>> &image, Rectangle rect);
+typedef vector<Rectangle> Rectangles;
+
+class Image {
+    vector<vector<Pixel>> matrix;
+    static Vector getNeededImageSize(Rectangles rectangles);
+public:
+    Vector size;
+    Image(Vector size);
+
+    static Image getEmptyImage(Rectangles rectangles);
+
+    Pixel &at(int x, int y);
+
+    void addRectangle(Rectangle rect);
+
+    void addRectangles(Rectangles rectangles);
+};
+
+class FilesIO {
+    ifstream inputFile;
+    ofstream outputFile;
+public:
+    FilesIO(string inputFilePath, string outputFilePath);
+
+    Rectangles readRectangleData();
+
+    void outputImage(Image image);
+
+    void closeAll();
+};
 
 int main() {
-    // Opening files and reading metadata
-    ifstream inputFile("U2.txt");
-    ofstream outputFile("U2rez.txt");
-    int rectCount;
-    inputFile >> rectCount;
+    // Data input
+    FilesIO filesIO("U2.txt", "U2rez.txt");
+    Rectangles rectangles = filesIO.readRectangleData();
+    Image image = Image::getEmptyImage(rectangles);
 
-    // Reading data
-    Rectangle rectangles[rectCount];
-    for (int i = 0; i < rectCount; ++i) {
-        Rectangle rect;
-        inputFile >> rect.start.x >> rect.start.y
-                  >> rect.size.x >> rect.size.y
-                  >> rect.color.r >> rect.color.g >> rect.color.b;
-        rectangles[i] = rect;
+    // Processing
+    image.addRectangles(rectangles);
+
+    // Data output
+    filesIO.outputImage(image);
+    filesIO.closeAll();
+
+    return 0;
+}
+
+void Image::addRectangle(Rectangle rect) {
+    for (int yi = rect.start.y; yi < rect.start.y + rect.size.y; ++yi) {
+        for (int xi = rect.start.x; xi < rect.start.x + rect.size.x; ++xi) {
+            at(xi, yi) = rect.color;
+        }
+    }
+}
+
+void Image::addRectangles(Rectangles rectangles) {
+    for (int i = 0; i < rectangles.size(); ++i) {
+        Rectangle rect = rectangles[i];
+        this->addRectangle(rect);
+    }
+}
+
+Image::Image(Vector size) {
+    assert(size.x > 0);
+    assert(size.y > 0);
+    this->size = size;
+
+    vector<vector<Pixel>> matrix;
+    for (int yi = 0; yi < size.y; ++yi) {
+        vector<Pixel> row;
+        for (int xi = 0; xi < size.x; ++xi) {
+            row.push_back(Pixel());
+        }
+        matrix.push_back(row);
     }
 
-    // Find the size of final picture
+    this->matrix = matrix;
+}
+
+Pixel &Image::at(int x, int y) {
+    return matrix.at((unsigned long) y).at((unsigned long) x);
+}
+
+Vector Image::getNeededImageSize(Rectangles rectangles) {
     Vector imageSize = {0, 0};
-    for (int i = 0; i < rectCount; ++i) { // Greedy search for the smallest possible image size
+    for (int i = 0; i < rectangles.size(); ++i) { // Greedy search for the smallest possible image size
         Rectangle rect = rectangles[i];
 
         int xNeeded = rect.start.x + rect.size.x; // x of needed image size to fit this one rectangle
@@ -55,42 +123,45 @@ int main() {
         if (imageSize.y < yNeeded)
             imageSize.y = yNeeded;
     }
-
-    // Create the picture
-    vector<vector<Pixel>> image;
-    for (int yi = 0; yi < imageSize.y; ++yi) {
-        vector<Pixel> row;
-        for (int xi = 0; xi < imageSize.x; ++xi) {
-            row.push_back(Pixel());
-        }
-        image.push_back(row);
-    }
-
-    // Color the picture
-    for (int i = 0; i < rectCount; ++i) {
-        Rectangle rect = rectangles[i];
-        addRectToImage(image, rect);
-    }
-
-    // Output data
-    outputFile << imageSize.y << " " << imageSize.x << endl;
-    for (int yi = 0; yi < imageSize.y; ++yi) {
-        for (int xi = 0; xi < imageSize.x; ++xi) {
-            Pixel pixel = image.at(yi).at(xi);
-            outputFile << pixel.r << " " << pixel.g << " " << pixel.b << endl;
-        }
-    }
-
-    // Closing the program
-    inputFile.close();
-    outputFile.close();
-    return 0;
+    return imageSize;
 }
 
-void addRectToImage(vector<vector<Pixel>> &image, Rectangle rect) {
-    for (int yi = rect.start.y; yi < rect.start.y + rect.size.y; ++yi) {
-        for (int xi = rect.start.x; xi < rect.start.x + rect.size.x; ++xi) {
-            image.at(yi).at(xi) = rect.color;
+Image Image::getEmptyImage(Rectangles rectangles) {
+    const Vector neededImageSize = getNeededImageSize(rectangles);
+    return Image(neededImageSize);
+}
+
+void FilesIO::closeAll() {
+    inputFile.close();
+    outputFile.close();
+}
+
+Rectangles FilesIO::readRectangleData() {
+    int rectCount;
+    inputFile >> rectCount;
+
+    Rectangles rectangles;
+    for (int i = 0; i < rectCount; ++i) {
+        Rectangle rect;
+        inputFile >> rect.start.x >> rect.start.y
+                  >> rect.size.x >> rect.size.y
+                  >> rect.color.r >> rect.color.g >> rect.color.b;
+        rectangles.push_back(rect);
+    }
+    return rectangles;
+}
+
+FilesIO::FilesIO(string inputFilePath, string outputFilePath) {
+    inputFile.open(inputFilePath, fstream::in);
+    outputFile.open(outputFilePath, fstream::out);
+}
+
+void FilesIO::outputImage(Image image) {
+    outputFile << image.size.y << " " << image.size.x << endl;
+    for (int yi = 0; yi < image.size.y; ++yi) {
+        for (int xi = 0; xi < image.size.x; ++xi) {
+            Pixel pixel = image.at(xi, yi);
+            outputFile << pixel.r << " " << pixel.g << " " << pixel.b << endl;
         }
     }
 }
