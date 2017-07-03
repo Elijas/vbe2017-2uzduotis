@@ -1,7 +1,5 @@
 #include <iostream>
-#include <sstream>
 #include <fstream>
-#include <cassert>
 #include <vector>
 
 using namespace std;
@@ -9,25 +7,24 @@ using namespace std;
 struct Pixel {
     int r, g, b;
 
-    Pixel() { // New images will be filled with white color because of this constructor
+    Pixel() {
         r = 255;
         g = 255;
         b = 255;
-    }
+    }  // New images will be filled with white color because of this constructor
 };
 
-struct Rect {
-    int x, y, dx, dy;
+struct Vector {
+    int x, y;
+};
+
+struct Rectangle {
+    Vector start; // upper left corner coordinates
+    Vector size; // length and width
     Pixel color;
 };
 
-void addRectToImage(vector<vector<Pixel>> &image, Rect rect) {
-    for (int ix = rect.x; ix < rect.x + rect.dx; ++ix) {
-        for (int iy = rect.y; iy < rect.y + rect.dy; ++iy) {
-            image.at(iy).at(ix) = rect.color;
-        }
-    }
-}
+void addRectToImage(vector<vector<Pixel>> &image, Rectangle rect);
 
 int main() {
     // Opening files and reading metadata
@@ -37,32 +34,33 @@ int main() {
     inputFile >> rectCount;
 
     // Reading data
-    Rect rectangles[rectCount];
+    Rectangle rectangles[rectCount];
     for (int i = 0; i < rectCount; ++i) {
-        Rect rect;
-        inputFile >> rect.x >> rect.y >> rect.dx >> rect.dy >> rect.color.r >> rect.color.g >> rect.color.b;
+        Rectangle rect;
+        inputFile >> rect.start.x >> rect.start.y
+                  >> rect.size.x >> rect.size.y
+                  >> rect.color.r >> rect.color.g >> rect.color.b;
         rectangles[i] = rect;
     }
 
     // Find the size of final picture
-    int ySize = 0, xSize = 0;
-    for (int i = 0; i < rectCount; ++i) {
-        Rect rect = rectangles[i];
+    Vector imageSize = {0, 0};
+    for (int i = 0; i < rectCount; ++i) { // Greedy search for the smallest possible image size
+        Rectangle rect = rectangles[i];
 
-        int xdx = rect.x + rect.dx; // x of lower left corner of rectangle
-        if (xdx > xSize)
-            xSize = xdx;
-
-        int ydy = rect.y + rect.dy; // y of lower left corner of rectangle
-        if (ydy > ySize)
-            ySize = ydy;
+        int xNeeded = rect.start.x + rect.size.x; // x of needed image size to fit this one rectangle
+        if (imageSize.x < xNeeded)
+            imageSize.x = xNeeded;
+        int yNeeded = rect.start.y + rect.size.y; // y of needed image size to fit this one rectangle
+        if (imageSize.y < yNeeded)
+            imageSize.y = yNeeded;
     }
 
     // Create the picture
     vector<vector<Pixel>> image;
-    for (int ix = 0; ix < ySize; ++ix) {
+    for (int yi = 0; yi < imageSize.y; ++yi) {
         vector<Pixel> row;
-        for (int iy = 0; iy < xSize; ++iy) {
+        for (int xi = 0; xi < imageSize.x; ++xi) {
             row.push_back(Pixel());
         }
         image.push_back(row);
@@ -70,15 +68,15 @@ int main() {
 
     // Color the picture
     for (int i = 0; i < rectCount; ++i) {
-        Rect rect = rectangles[i];
+        Rectangle rect = rectangles[i];
         addRectToImage(image, rect);
     }
 
     // Output data
-    outputFile << ySize << " " << xSize << endl;
-    for (int iiy = 0; iiy < ySize; ++iiy) {
-        for (int iix = 0; iix < xSize; ++iix) {
-            Pixel pixel = image.at(iiy).at(iix);
+    outputFile << imageSize.y << " " << imageSize.x << endl;
+    for (int yi = 0; yi < imageSize.y; ++yi) {
+        for (int xi = 0; xi < imageSize.x; ++xi) {
+            Pixel pixel = image.at(yi).at(xi);
             outputFile << pixel.r << " " << pixel.g << " " << pixel.b << endl;
         }
     }
@@ -87,4 +85,12 @@ int main() {
     inputFile.close();
     outputFile.close();
     return 0;
+}
+
+void addRectToImage(vector<vector<Pixel>> &image, Rectangle rect) {
+    for (int yi = rect.start.y; yi < rect.start.y + rect.size.y; ++yi) {
+        for (int xi = rect.start.x; xi < rect.start.x + rect.size.x; ++xi) {
+            image.at(yi).at(xi) = rect.color;
+        }
+    }
 }
